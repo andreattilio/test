@@ -52,6 +52,19 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Baby-specific colors
+				feed: {
+					DEFAULT: 'hsl(var(--feed))',
+					foreground: 'hsl(var(--feed-foreground))'
+				},
+				sleep: {
+					DEFAULT: 'hsl(var(--sleep))',
+					foreground: 'hsl(var(--sleep-foreground))'
+				},
+				diaper: {
+					DEFAULT: 'hsl(var(--diaper))',
+					foreground: 'hsl(var(--diaper-foreground))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

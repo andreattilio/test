@@ -18,6 +18,9 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        feed: "bg-feed text-feed-foreground hover:bg-feed/80 shadow-lg border-0",
+        sleep: "bg-sleep text-sleep-foreground hover:bg-sleep/80 shadow-lg border-0",
+        diaper: "bg-diaper text-diaper-foreground hover:bg-diaper/80 shadow-lg border-0",
       },
       size: {
         default: "h-10 px-4 py-2",
