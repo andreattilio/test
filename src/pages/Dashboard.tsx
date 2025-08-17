@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Baby, Milk, Moon, RotateCcw } from "lucide-react";
+import { Baby, Milk, Moon, RotateCcw, Play, Pause } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface DailyTotals {
   feedFormula: number;
@@ -13,7 +14,13 @@ interface DailyTotals {
   sleepHours: number;
 }
 
+interface SleepSession {
+  startTime: Date | null;
+  isActive: boolean;
+}
+
 const Dashboard = () => {
+  const { toast } = useToast();
   const [totals, setTotals] = useState<DailyTotals>({
     feedFormula: 120,
     feedBreast: 80,
@@ -25,6 +32,8 @@ const Dashboard = () => {
   const [feedAmount, setFeedAmount] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentFeedType, setCurrentFeedType] = useState<"formula" | "breast">("formula");
+  const [sleepSession, setSleepSession] = useState<SleepSession>({ startTime: null, isActive: false });
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const handleFeedSubmit = () => {
     const amount = parseInt(feedAmount);
@@ -48,6 +57,68 @@ const Dashboard = () => {
       ...prev,
       [type === "pee" ? "peeCount" : "pooCount"]: prev[type === "pee" ? "peeCount" : "pooCount"] + 1
     }));
+    
+    toast({
+      title: `${type === "pee" ? "Pee" : "Poo"} logged`,
+      description: "Tap History to edit if needed",
+      duration: 2000,
+    });
+  };
+
+  // Timer effect for sleep tracking
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (sleepSession.isActive && sleepSession.startTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Date.now() - sleepSession.startTime!.getTime());
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [sleepSession.isActive, sleepSession.startTime]);
+
+  const handleSleepStart = () => {
+    const now = new Date();
+    setSleepSession({ startTime: now, isActive: true });
+    setElapsedTime(0);
+    
+    toast({
+      title: "Sleep started",
+      description: "Timer is now running",
+      duration: 2000,
+    });
+  };
+
+  const handleSleepEnd = () => {
+    if (sleepSession.startTime) {
+      const sessionDuration = (Date.now() - sleepSession.startTime.getTime()) / (1000 * 60 * 60); // hours
+      setTotals(prev => ({
+        ...prev,
+        sleepHours: prev.sleepHours + sessionDuration
+      }));
+    }
+    
+    setSleepSession({ startTime: null, isActive: false });
+    setElapsedTime(0);
+    
+    toast({
+      title: "Sleep ended",
+      description: "Session added to daily total",
+      duration: 2000,
+    });
+  };
+
+  const formatElapsedTime = (milliseconds: number) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
   };
 
   return (
@@ -147,11 +218,40 @@ const Dashboard = () => {
 
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground">Sleep</h3>
+          
+          {sleepSession.isActive && (
+            <Card className="p-4 bg-gradient-to-br from-sleep/20 to-sleep/10">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Moon className="h-5 w-5 text-sleep-foreground" />
+                  <span className="text-sm text-muted-foreground">Sleep in progress</span>
+                </div>
+                <div className="text-2xl font-bold text-sleep-foreground">
+                  {formatElapsedTime(elapsedTime)}
+                </div>
+              </div>
+            </Card>
+          )}
+          
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="sleep" size="lg" className="h-16">
+            <Button 
+              variant="sleep" 
+              size="lg" 
+              className="h-16"
+              onClick={handleSleepStart}
+              disabled={sleepSession.isActive}
+            >
+              <Play className="h-4 w-4 mr-2" />
               😴 Sleep Start
             </Button>
-            <Button variant="sleep" size="lg" className="h-16">
+            <Button 
+              variant="sleep" 
+              size="lg" 
+              className="h-16"
+              onClick={handleSleepEnd}
+              disabled={!sleepSession.isActive}
+            >
+              <Pause className="h-4 w-4 mr-2" />
               🌅 Sleep End
             </Button>
           </div>
