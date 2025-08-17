@@ -36,6 +36,9 @@ const History = () => {
       case "diaper":
         return entry.subtype === "pee" ? "Pee" : "Poo";
       case "sleep":
+        if (entry.subtype === "session") {
+          return `Sleep: ${entry.sleepStart} - ${entry.sleepEnd} (${entry.sleepDuration})`;
+        }
         return entry.subtype === "start" ? "Sleep started" : "Sleep ended";
       default:
         return "";

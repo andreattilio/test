@@ -9,7 +9,7 @@ import { useActivity } from "@/contexts/ActivityContext";
 
 const Dashboard = () => {
   const { toast } = useToast();
-  const { history, addActivity, sleepStartTime, setSleepStartTime } = useActivity();
+  const { history, addActivity, sleepStartTime, setSleepStartTime, completeSleepSession } = useActivity();
   const [feedAmount, setFeedAmount] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentFeedType, setCurrentFeedType] = useState<"formula" | "breast">("formula");
@@ -40,18 +40,16 @@ const Dashboard = () => {
     const pooCount = todayEntries.filter(entry => 
       entry.type === 'diaper' && entry.subtype.includes('poo')).length;
     
-    const sleepEntries = todayEntries.filter(entry => entry.type === 'sleep');
-    const sleepPairs = [];
-    for (let i = 0; i < sleepEntries.length; i += 2) {
-      if (sleepEntries[i] && sleepEntries[i + 1]) {
-        sleepPairs.push([sleepEntries[i], sleepEntries[i + 1]]);
+    const sleepEntries = todayEntries.filter(entry => entry.type === 'sleep' && entry.subtype === 'session');
+    const totalSleepMinutes = sleepEntries.reduce((total, entry) => {
+      if (entry.sleepStart && entry.sleepEnd) {
+        const [startHour, startMin] = entry.sleepStart.split(':').map(Number);
+        const [endHour, endMin] = entry.sleepEnd.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+        return total + (endMinutes - startMinutes);
       }
-    }
-    
-    const totalSleepMinutes = sleepPairs.reduce((total, [start, end]) => {
-      const startTime = new Date(start.timestamp);
-      const endTime = new Date(end.timestamp);
-      return total + Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      return total;
     }, 0);
 
     return { feedTotal, peeCount, pooCount, totalSleepMinutes };
@@ -137,18 +135,12 @@ const Dashboard = () => {
       return;
     }
 
-    const now = new Date();
+    const duration = Math.floor((Date.now() - sleepStartTime.getTime()) / (1000 * 60));
+    
+    completeSleepSession();
     setSleepStartTime(null);
     setElapsedTime(0);
 
-    addActivity({
-      type: "sleep",
-      subtype: "end",
-      icon: "🌅",
-      time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-    });
-
-    const duration = Math.floor((now.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     toast({
       title: "Sleep ended",
       description: `Sleep duration: ${Math.floor(duration / 60)}h ${duration % 60}m`,

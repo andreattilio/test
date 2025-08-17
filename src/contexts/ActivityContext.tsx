@@ -8,6 +8,9 @@ export interface ActivityEntry {
   amount?: number;
   icon: string;
   timestamp: Date;
+  sleepStart?: string;
+  sleepEnd?: string;
+  sleepDuration?: string;
 }
 
 export interface DayHistory {
@@ -21,12 +24,14 @@ interface ActivityContextType {
   deleteActivity: (entryId: string) => void;
   sleepStartTime: Date | null;
   setSleepStartTime: (time: Date | null) => void;
+  completeSleepSession: () => void;
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
 
 export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [sleepStartTime, setSleepStartTime] = useState<Date | null>(null);
+  const [pendingSleepId, setPendingSleepId] = useState<string | null>(null);
   const [history, setHistory] = useState<DayHistory[]>(() => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -74,6 +79,13 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
       timestamp: now
     };
 
+    // For sleep start, just store the start time and create placeholder
+    if (activity.type === 'sleep' && activity.subtype === 'start') {
+      setPendingSleepId(newEntry.id);
+      // Don't add to history yet, wait for sleep end
+      return;
+    }
+
     setHistory(prev => {
       const existingDayIndex = prev.findIndex(day => day.date === today);
       
@@ -93,6 +105,48 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
+  const completeSleepSession = () => {
+    if (!sleepStartTime || !pendingSleepId) return;
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const duration = Math.floor((now.getTime() - sleepStartTime.getTime()) / (1000 * 60));
+    const hours = Math.floor(duration / 60);
+    const minutes = duration % 60;
+
+    const sleepEntry: ActivityEntry = {
+      id: pendingSleepId,
+      type: 'sleep',
+      subtype: 'session',
+      icon: '😴',
+      time: sleepStartTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      timestamp: sleepStartTime,
+      sleepStart: sleepStartTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      sleepEnd: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      sleepDuration: `${hours}h ${minutes}m`
+    };
+
+    setHistory(prev => {
+      const existingDayIndex = prev.findIndex(day => day.date === today);
+      
+      if (existingDayIndex >= 0) {
+        const updatedHistory = [...prev];
+        updatedHistory[existingDayIndex] = {
+          ...updatedHistory[existingDayIndex],
+          entries: [sleepEntry, ...updatedHistory[existingDayIndex].entries]
+        };
+        return updatedHistory;
+      } else {
+        return [{
+          date: today,
+          entries: [sleepEntry]
+        }, ...prev];
+      }
+    });
+
+    setPendingSleepId(null);
+  };
+
   const deleteActivity = (entryId: string) => {
     setHistory(prev => 
       prev.map(day => ({
@@ -108,7 +162,8 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
       addActivity,
       deleteActivity,
       sleepStartTime,
-      setSleepStartTime
+      setSleepStartTime,
+      completeSleepSession
     }}>
       {children}
     </ActivityContext.Provider>
