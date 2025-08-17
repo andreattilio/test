@@ -22,6 +22,7 @@ interface ActivityContextType {
   history: DayHistory[];
   addActivity: (activity: Omit<ActivityEntry, 'id' | 'timestamp'>) => void;
   deleteActivity: (entryId: string) => void;
+  editActivity: (updatedEntry: ActivityEntry) => void;
   sleepStartTime: Date | null;
   setSleepStartTime: (time: Date | null) => void;
   completeSleepSession: () => void;
@@ -156,11 +157,23 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
     );
   };
 
+  const editActivity = (updatedEntry: ActivityEntry) => {
+    setHistory(prev => 
+      prev.map(day => ({
+        ...day,
+        entries: day.entries.map(entry => 
+          entry.id === updatedEntry.id ? updatedEntry : entry
+        )
+      }))
+    );
+  };
+
   return (
     <ActivityContext.Provider value={{
       history,
       addActivity,
       deleteActivity,
+      editActivity,
       sleepStartTime,
       setSleepStartTime,
       completeSleepSession

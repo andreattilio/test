@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Trash2, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useActivity } from "@/contexts/ActivityContext";
+import { EditEntryDialog } from "@/components/EditEntryDialog";
 
 const History = () => {
   const { toast } = useToast();
@@ -172,14 +173,17 @@ const History = () => {
                           {entry.time}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteEntry(entry.id)}
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <EditEntryDialog entry={entry} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteEntry(entry.id)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -232,14 +236,17 @@ const History = () => {
                               {entry.time}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteEntry(entry.id)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <EditEntryDialog entry={entry} />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteEntry(entry.id)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}
@@ -288,14 +295,17 @@ const History = () => {
                                 {entry.time}
                               </p>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <EditEntryDialog entry={entry} />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteEntry(entry.id)}
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </Card>
                       ))}
