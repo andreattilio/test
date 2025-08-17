@@ -5,45 +5,78 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Baby, Milk, Moon, RotateCcw, Play, Pause } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface DailyTotals {
-  feedFormula: number;
-  feedBreast: number;
-  peeCount: number;
-  pooCount: number;
-  sleepHours: number;
-}
-
-interface SleepSession {
-  startTime: Date | null;
-  isActive: boolean;
-}
+import { useActivity } from "@/contexts/ActivityContext";
 
 const Dashboard = () => {
   const { toast } = useToast();
-  const [totals, setTotals] = useState<DailyTotals>({
-    feedFormula: 120,
-    feedBreast: 80,
-    peeCount: 6,
-    pooCount: 3,
-    sleepHours: 8.5,
-  });
-
+  const { history, addActivity, sleepStartTime, setSleepStartTime } = useActivity();
   const [feedAmount, setFeedAmount] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentFeedType, setCurrentFeedType] = useState<"formula" | "breast">("formula");
-  const [sleepSession, setSleepSession] = useState<SleepSession>({ startTime: null, isActive: false });
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Timer effect for sleep tracking
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (sleepStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Date.now() - sleepStartTime.getTime());
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [sleepStartTime]);
+
+  const getTodayStats = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntries = history.find(day => day.date === today)?.entries || [];
+    
+    const feedTotal = todayEntries
+      .filter(entry => entry.type === 'feed')
+      .reduce((sum, entry) => sum + (entry.amount || 0), 0);
+    
+    const peeCount = todayEntries.filter(entry => 
+      entry.type === 'diaper' && entry.subtype.includes('pee')).length;
+    
+    const pooCount = todayEntries.filter(entry => 
+      entry.type === 'diaper' && entry.subtype.includes('poo')).length;
+    
+    const sleepEntries = todayEntries.filter(entry => entry.type === 'sleep');
+    const sleepPairs = [];
+    for (let i = 0; i < sleepEntries.length; i += 2) {
+      if (sleepEntries[i] && sleepEntries[i + 1]) {
+        sleepPairs.push([sleepEntries[i], sleepEntries[i + 1]]);
+      }
+    }
+    
+    const totalSleepMinutes = sleepPairs.reduce((total, [start, end]) => {
+      const startTime = new Date(start.timestamp);
+      const endTime = new Date(end.timestamp);
+      return total + Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+    }, 0);
+
+    return { feedTotal, peeCount, pooCount, totalSleepMinutes };
+  };
+
+  const { feedTotal, peeCount, pooCount, totalSleepMinutes } = getTodayStats();
 
   const handleFeedSubmit = () => {
     const amount = parseInt(feedAmount);
     if (amount > 0 && amount <= 1000) {
-      setTotals(prev => ({
-        ...prev,
-        [currentFeedType === "formula" ? "feedFormula" : "feedBreast"]: prev[currentFeedType === "formula" ? "feedFormula" : "feedBreast"] + amount
-      }));
+      addActivity({
+        type: "feed",
+        subtype: currentFeedType,
+        amount: amount,
+        icon: currentFeedType === "formula" ? "🍼" : "🤱",
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      });
+
       setFeedAmount("");
       setIsDialogOpen(false);
+
+      toast({
+        title: "Feed logged",
+        description: `${currentFeedType === "formula" ? "Formula" : "Breast milk"} - ${amount}ml recorded`,
+      });
     }
   };
 
@@ -53,10 +86,12 @@ const Dashboard = () => {
   };
 
   const addDiaperCount = (type: "pee" | "poo") => {
-    setTotals(prev => ({
-      ...prev,
-      [type === "pee" ? "peeCount" : "pooCount"]: prev[type === "pee" ? "peeCount" : "pooCount"] + 1
-    }));
+    addActivity({
+      type: "diaper",
+      subtype: type,
+      icon: type === "pee" ? "💧" : "💩",
+      time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+    });
     
     toast({
       title: `${type === "pee" ? "Pee" : "Poo"} logged`,
@@ -65,45 +100,58 @@ const Dashboard = () => {
     });
   };
 
-  // Timer effect for sleep tracking
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (sleepSession.isActive && sleepSession.startTime) {
-      interval = setInterval(() => {
-        setElapsedTime(Date.now() - sleepSession.startTime!.getTime());
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [sleepSession.isActive, sleepSession.startTime]);
-
   const handleSleepStart = () => {
-    const now = new Date();
-    setSleepSession({ startTime: now, isActive: true });
-    setElapsedTime(0);
+    if (sleepStartTime) {
+      toast({
+        title: "Sleep already started",
+        description: "Please end current sleep session first",
+        variant: "destructive",
+      });
+      return;
+    }
     
+    const now = new Date();
+    setSleepStartTime(now);
+    setElapsedTime(0);
+
+    addActivity({
+      type: "sleep",
+      subtype: "start",
+      icon: "😴",
+      time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+    });
+
     toast({
       title: "Sleep started",
-      description: "Timer is now running",
-      duration: 2000,
+      description: "Timer started",
     });
   };
 
   const handleSleepEnd = () => {
-    if (sleepSession.startTime) {
-      const sessionDuration = (Date.now() - sleepSession.startTime.getTime()) / (1000 * 60 * 60); // hours
-      setTotals(prev => ({
-        ...prev,
-        sleepHours: prev.sleepHours + sessionDuration
-      }));
+    if (!sleepStartTime) {
+      toast({
+        title: "No sleep session",
+        description: "Please start sleep first",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    setSleepSession({ startTime: null, isActive: false });
+
+    const now = new Date();
+    setSleepStartTime(null);
     setElapsedTime(0);
-    
+
+    addActivity({
+      type: "sleep",
+      subtype: "end",
+      icon: "🌅",
+      time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+    });
+
+    const duration = Math.floor((now.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     toast({
       title: "Sleep ended",
-      description: "Session added to daily total",
-      duration: 2000,
+      description: `Sleep duration: ${Math.floor(duration / 60)}h ${duration % 60}m`,
     });
   };
 
@@ -138,10 +186,7 @@ const Dashboard = () => {
           <Milk className="h-6 w-6 mx-auto text-feed-foreground mb-2" />
           <p className="text-sm text-muted-foreground">Total Feed</p>
           <p className="text-2xl font-bold text-feed-foreground">
-            {totals.feedFormula + totals.feedBreast}ml
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Formula: {totals.feedFormula}ml • Breast: {totals.feedBreast}ml
+            {feedTotal}ml
           </p>
         </Card>
 
@@ -149,7 +194,7 @@ const Dashboard = () => {
           <Moon className="h-6 w-6 mx-auto text-sleep-foreground mb-2" />
           <p className="text-sm text-muted-foreground">Sleep</p>
           <p className="text-2xl font-bold text-sleep-foreground">
-            {totals.sleepHours}h
+            {Math.floor(totalSleepMinutes / 60)}h {totalSleepMinutes % 60}m
           </p>
         </Card>
 
@@ -157,7 +202,7 @@ const Dashboard = () => {
           <div className="text-2xl mb-2">💧</div>
           <p className="text-sm text-muted-foreground">Pee</p>
           <p className="text-2xl font-bold text-diaper-foreground">
-            {totals.peeCount}
+            {peeCount}
           </p>
         </Card>
 
@@ -165,7 +210,7 @@ const Dashboard = () => {
           <div className="text-2xl mb-2">💩</div>
           <p className="text-sm text-muted-foreground">Poo</p>
           <p className="text-2xl font-bold text-diaper-foreground">
-            {totals.pooCount}
+            {pooCount}
           </p>
         </Card>
       </div>
@@ -219,7 +264,7 @@ const Dashboard = () => {
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground">Sleep</h3>
           
-          {sleepSession.isActive && (
+          {sleepStartTime && (
             <Card className="p-4 bg-gradient-to-br from-sleep/20 to-sleep/10">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -239,7 +284,7 @@ const Dashboard = () => {
               size="lg" 
               className="h-16"
               onClick={handleSleepStart}
-              disabled={sleepSession.isActive}
+              disabled={!!sleepStartTime}
             >
               <Play className="h-4 w-4 mr-2" />
               😴 Sleep Start
@@ -249,7 +294,7 @@ const Dashboard = () => {
               size="lg" 
               className="h-16"
               onClick={handleSleepEnd}
-              disabled={!sleepSession.isActive}
+              disabled={!sleepStartTime}
             >
               <Pause className="h-4 w-4 mr-2" />
               🌅 Sleep End

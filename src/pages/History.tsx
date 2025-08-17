@@ -1,42 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Clock, Edit2, Trash2 } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useActivity } from "@/contexts/ActivityContext";
 
 const History = () => {
   const { toast } = useToast();
-  // Mock data - will be replaced with real data from database
-  const [mockHistory, setMockHistory] = useState(() => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    return [
-      {
-        date: today.toISOString().split('T')[0],
-        entries: [
-          { id: "1", time: "14:30", type: "feed", subtype: "formula", amount: 120, icon: "🍼" },
-          { id: "2", time: "13:45", type: "diaper", subtype: "pee", icon: "💧" },
-          { id: "3", time: "12:15", type: "sleep", subtype: "end", icon: "🌅" },
-          { id: "4", time: "10:30", type: "sleep", subtype: "start", icon: "😴" },
-          { id: "5", time: "09:15", type: "feed", subtype: "breast", amount: 80, icon: "🤱" },
-        ]
-      },
-      {
-        date: yesterday.toISOString().split('T')[0],
-        entries: [
-          { id: "6", time: "22:30", type: "feed", subtype: "formula", amount: 150, icon: "🍼" },
-          { id: "7", time: "21:45", type: "diaper", subtype: "poo", icon: "💩" },
-          { id: "8", time: "20:15", type: "diaper", subtype: "pee", icon: "💧" },
-          { id: "9", time: "19:30", type: "feed", subtype: "breast", amount: 90, icon: "🤱" },
-          { id: "10", time: "18:00", type: "sleep", subtype: "end", icon: "🌅" },
-          { id: "11", time: "16:30", type: "sleep", subtype: "start", icon: "😴" },
-        ]
-      }
-    ];
-  });
+  const { history, deleteActivity } = useActivity();
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -72,12 +43,7 @@ const History = () => {
   };
 
   const deleteEntry = (entryId: string) => {
-    setMockHistory(prev => 
-      prev.map(day => ({
-        ...day,
-        entries: day.entries.filter(entry => entry.id !== entryId)
-      })).filter(day => day.entries.length > 0)
-    );
+    deleteActivity(entryId);
     
     toast({
       title: "Entry deleted",
@@ -99,7 +65,7 @@ const History = () => {
 
       {/* History List */}
       <div className="space-y-6">
-        {mockHistory.map((day) => (
+        {history.map((day) => (
           <div key={day.date} className="space-y-3">
             <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
               <h2 className="text-xl font-semibold text-foreground">
@@ -138,7 +104,7 @@ const History = () => {
       </div>
 
       {/* Empty state for when no data */}
-      {mockHistory.length === 0 && (
+      {history.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📝</div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
