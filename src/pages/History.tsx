@@ -8,29 +8,35 @@ import { useState } from "react";
 const History = () => {
   const { toast } = useToast();
   // Mock data - will be replaced with real data from database
-  const [mockHistory, setMockHistory] = useState([
-    {
-      date: "2024-01-17",
-      entries: [
-        { id: "1", time: "14:30", type: "feed", subtype: "formula", amount: 120, icon: "🍼" },
-        { id: "2", time: "13:45", type: "diaper", subtype: "pee", icon: "💧" },
-        { id: "3", time: "12:15", type: "sleep", subtype: "end", icon: "🌅" },
-        { id: "4", time: "10:30", type: "sleep", subtype: "start", icon: "😴" },
-        { id: "5", time: "09:15", type: "feed", subtype: "breast", amount: 80, icon: "🤱" },
-      ]
-    },
-    {
-      date: "2024-01-16",
-      entries: [
-        { id: "6", time: "22:30", type: "feed", subtype: "formula", amount: 150, icon: "🍼" },
-        { id: "7", time: "21:45", type: "diaper", subtype: "poo", icon: "💩" },
-        { id: "8", time: "20:15", type: "diaper", subtype: "pee", icon: "💧" },
-        { id: "9", time: "19:30", type: "feed", subtype: "breast", amount: 90, icon: "🤱" },
-        { id: "10", time: "18:00", type: "sleep", subtype: "end", icon: "🌅" },
-        { id: "11", time: "16:30", type: "sleep", subtype: "start", icon: "😴" },
-      ]
-    }
-  ]);
+  const [mockHistory, setMockHistory] = useState(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    return [
+      {
+        date: today.toISOString().split('T')[0],
+        entries: [
+          { id: "1", time: "14:30", type: "feed", subtype: "formula", amount: 120, icon: "🍼" },
+          { id: "2", time: "13:45", type: "diaper", subtype: "pee", icon: "💧" },
+          { id: "3", time: "12:15", type: "sleep", subtype: "end", icon: "🌅" },
+          { id: "4", time: "10:30", type: "sleep", subtype: "start", icon: "😴" },
+          { id: "5", time: "09:15", type: "feed", subtype: "breast", amount: 80, icon: "🤱" },
+        ]
+      },
+      {
+        date: yesterday.toISOString().split('T')[0],
+        entries: [
+          { id: "6", time: "22:30", type: "feed", subtype: "formula", amount: 150, icon: "🍼" },
+          { id: "7", time: "21:45", type: "diaper", subtype: "poo", icon: "💩" },
+          { id: "8", time: "20:15", type: "diaper", subtype: "pee", icon: "💧" },
+          { id: "9", time: "19:30", type: "feed", subtype: "breast", amount: 90, icon: "🤱" },
+          { id: "10", time: "18:00", type: "sleep", subtype: "end", icon: "🌅" },
+          { id: "11", time: "16:30", type: "sleep", subtype: "start", icon: "😴" },
+        ]
+      }
+    ];
+  });
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -46,7 +52,8 @@ const History = () => {
       return date.toLocaleDateString('en-US', { 
         weekday: 'long', 
         month: 'short', 
-        day: 'numeric' 
+        day: 'numeric',
+        year: 'numeric'
       });
     }
   };
