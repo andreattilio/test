@@ -1,0 +1,74 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+
+interface SleepEndTimeEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentTime: Date;
+  onConfirm: (adjustedTime: Date) => void;
+}
+
+export const SleepEndTimeEditor: React.FC<SleepEndTimeEditorProps> = ({
+  open,
+  onOpenChange,
+  currentTime,
+  onConfirm
+}) => {
+  const { toast } = useToast();
+  const [adjustedTime, setAdjustedTime] = useState(
+    currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+  );
+
+  const handleConfirm = () => {
+    const [hours, minutes] = adjustedTime.split(':').map(Number);
+    const newTime = new Date();
+    newTime.setHours(hours, minutes, 0, 0);
+    
+    onConfirm(newTime);
+    onOpenChange(false);
+    
+    toast({
+      title: "Sleep end time adjusted",
+      description: `Sleep ended at ${adjustedTime}`,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Adjust Sleep End Time</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="endTime" className="text-right">
+              End Time
+            </Label>
+            <Input
+              id="endTime"
+              type="time"
+              value={adjustedTime}
+              onChange={(e) => setAdjustedTime(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Adjust the sleep end time to when your baby actually woke up
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm}>
+            Confirm End Time
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

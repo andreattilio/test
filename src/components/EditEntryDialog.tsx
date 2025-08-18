@@ -73,18 +73,20 @@ export const EditEntryDialog: React.FC<EditEntryDialogProps> = ({ entry }) => {
           <DialogTitle>Edit Entry</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="time" className="text-right">
-              Time
-            </Label>
-            <Input
-              id="time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
+          {entry.type !== 'sleep' && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="time" className="text-right">
+                Time
+              </Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          )}
 
           {entry.type === 'feed' && (
             <div className="grid grid-cols-4 items-center gap-4">

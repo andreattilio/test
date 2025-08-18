@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Baby, Milk, Moon, RotateCcw, Play, Pause } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useActivity } from "@/contexts/ActivityContext";
+import { SleepStartTimeEditor } from "@/components/SleepStartTimeEditor";
+import { SleepEndTimeEditor } from "@/components/SleepEndTimeEditor";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -14,6 +16,10 @@ const Dashboard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentFeedType, setCurrentFeedType] = useState<"formula" | "breast">("formula");
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showSleepStartEditor, setShowSleepStartEditor] = useState(false);
+  const [showSleepEndEditor, setShowSleepEndEditor] = useState(false);
+  const [pendingStartTime, setPendingStartTime] = useState<Date | null>(null);
+  const [pendingEndTime, setPendingEndTime] = useState<Date | null>(null);
 
   // Timer effect for sleep tracking
   useEffect(() => {
@@ -109,14 +115,19 @@ const Dashboard = () => {
     }
     
     const now = new Date();
-    setSleepStartTime(now);
-    setElapsedTime(0);
+    setPendingStartTime(now);
+    setShowSleepStartEditor(true);
+  };
+
+  const confirmSleepStart = (adjustedTime: Date) => {
+    setSleepStartTime(adjustedTime);
+    setElapsedTime(Date.now() - adjustedTime.getTime());
 
     addActivity({
       type: "sleep",
       subtype: "start",
       icon: "😴",
-      time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      time: adjustedTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
     });
 
     toast({
@@ -135,7 +146,15 @@ const Dashboard = () => {
       return;
     }
 
-    const duration = Math.floor((Date.now() - sleepStartTime.getTime()) / (1000 * 60));
+    const now = new Date();
+    setPendingEndTime(now);
+    setShowSleepEndEditor(true);
+  };
+
+  const confirmSleepEnd = (adjustedTime: Date) => {
+    if (!sleepStartTime) return;
+    
+    const duration = Math.floor((adjustedTime.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     
     completeSleepSession();
     setSleepStartTime(null);
@@ -338,6 +357,22 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Sleep Start Time Editor */}
+      <SleepStartTimeEditor
+        open={showSleepStartEditor}
+        onOpenChange={setShowSleepStartEditor}
+        currentTime={pendingStartTime || new Date()}
+        onConfirm={confirmSleepStart}
+      />
+
+      {/* Sleep End Time Editor */}
+      <SleepEndTimeEditor
+        open={showSleepEndEditor}
+        onOpenChange={setShowSleepEndEditor}
+        currentTime={pendingEndTime || new Date()}
+        onConfirm={confirmSleepEnd}
+      />
     </div>
   );
 };
