@@ -19,9 +19,11 @@ export const SleepEndTimeEditor: React.FC<SleepEndTimeEditorProps> = ({
   onConfirm
 }) => {
   const { toast } = useToast();
-  const [adjustedTime, setAdjustedTime] = useState(
-    currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-  );
+  const [adjustedTime, setAdjustedTime] = useState(() => {
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  });
 
   const handleConfirm = () => {
     const [hours, minutes] = adjustedTime.split(':').map(Number);
