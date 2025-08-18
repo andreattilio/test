@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useActivity } from "@/contexts/ActivityContext";
 import { SleepStartTimeEditor } from "@/components/SleepStartTimeEditor";
 import { SleepEndTimeEditor } from "@/components/SleepEndTimeEditor";
+import { TimeEditor } from "@/components/TimeEditor";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -20,6 +21,12 @@ const Dashboard = () => {
   const [showSleepEndEditor, setShowSleepEndEditor] = useState(false);
   const [pendingStartTime, setPendingStartTime] = useState<Date | null>(null);
   const [pendingEndTime, setPendingEndTime] = useState<Date | null>(null);
+  const [showFeedTimeEditor, setShowFeedTimeEditor] = useState(false);
+  const [showDiaperTimeEditor, setShowDiaperTimeEditor] = useState(false);
+  const [pendingFeedTime, setPendingFeedTime] = useState<Date | null>(null);
+  const [pendingDiaperTime, setPendingDiaperTime] = useState<Date | null>(null);
+  const [pendingFeedType, setPendingFeedType] = useState<"formula" | "breast">("formula");
+  const [pendingDiaperType, setPendingDiaperType] = useState<"pee" | "poo">("pee");
 
   // Timer effect for sleep tracking
   useEffect(() => {
@@ -66,22 +73,32 @@ const Dashboard = () => {
   const handleFeedSubmit = () => {
     const amount = parseInt(feedAmount);
     if (amount > 0 && amount <= 1000) {
-      addActivity({
-        type: "feed",
-        subtype: currentFeedType,
-        amount: amount,
-        icon: currentFeedType === "formula" ? "🍼" : "🤱",
-        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-      });
-
-      setFeedAmount("");
+      const now = new Date();
+      setPendingFeedTime(now);
+      setPendingFeedType(currentFeedType);
+      // Don't clear feedAmount yet, keep it for confirmFeed
       setIsDialogOpen(false);
-
-      toast({
-        title: "Feed logged",
-        description: `${currentFeedType === "formula" ? "Formula" : "Breast milk"} - ${amount}ml recorded`,
-      });
+      setShowFeedTimeEditor(true);
     }
+  };
+
+  const confirmFeed = (adjustedTime: Date) => {
+    const amount = parseInt(feedAmount || "0");
+    addActivity({
+      type: "feed",
+      subtype: pendingFeedType,
+      amount: amount,
+      icon: pendingFeedType === "formula" ? "🍼" : "🤱",
+      time: adjustedTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+    });
+
+    // Clear feedAmount after successful confirmation
+    setFeedAmount("");
+
+    toast({
+      title: "Feed logged",
+      description: `${pendingFeedType === "formula" ? "Formula" : "Breast milk"} - ${amount}ml recorded`,
+    });
   };
 
   const openFeedDialog = (type: "formula" | "breast") => {
@@ -89,17 +106,24 @@ const Dashboard = () => {
     setIsDialogOpen(true);
   };
 
-  const addDiaperCount = (type: "pee" | "poo") => {
+  const handleDiaperCount = (type: "pee" | "poo") => {
+    const now = new Date();
+    setPendingDiaperTime(now);
+    setPendingDiaperType(type);
+    setShowDiaperTimeEditor(true);
+  };
+
+  const confirmDiaper = (adjustedTime: Date) => {
     addActivity({
       type: "diaper",
-      subtype: type,
-      icon: type === "pee" ? "💧" : "💩",
-      time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      subtype: pendingDiaperType,
+      icon: pendingDiaperType === "pee" ? "💧" : "💩",
+      time: adjustedTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
     });
     
     toast({
-      title: `${type === "pee" ? "Pee" : "Poo"} logged`,
-      description: "Tap History to edit if needed",
+      title: `${pendingDiaperType === "pee" ? "Pee" : "Poo"} logged`,
+      description: "Activity recorded",
       duration: 2000,
     });
   };
@@ -257,7 +281,7 @@ const Dashboard = () => {
               variant="diaper" 
               size="lg" 
               className="h-16"
-              onClick={() => addDiaperCount("pee")}
+              onClick={() => handleDiaperCount("pee")}
             >
               💧 Pee
             </Button>
@@ -265,7 +289,7 @@ const Dashboard = () => {
               variant="diaper" 
               size="lg" 
               className="h-16"
-              onClick={() => addDiaperCount("poo")}
+              onClick={() => handleDiaperCount("poo")}
             >
               💩 Poo
             </Button>
@@ -371,6 +395,26 @@ const Dashboard = () => {
         onOpenChange={setShowSleepEndEditor}
         currentTime={pendingEndTime || new Date()}
         onConfirm={confirmSleepEnd}
+      />
+
+      {/* Feed Time Editor */}
+      <TimeEditor
+        open={showFeedTimeEditor}
+        onOpenChange={setShowFeedTimeEditor}
+        currentTime={pendingFeedTime || new Date()}
+        onConfirm={confirmFeed}
+        title={`Confirm ${pendingFeedType === "formula" ? "Formula" : "Breast Milk"} Time`}
+        confirmButtonText="Confirm Feed Time"
+      />
+
+      {/* Diaper Time Editor */}
+      <TimeEditor
+        open={showDiaperTimeEditor}
+        onOpenChange={setShowDiaperTimeEditor}
+        currentTime={pendingDiaperTime || new Date()}
+        onConfirm={confirmDiaper}
+        title={`Confirm ${pendingDiaperType === "pee" ? "Pee" : "Poo"} Time`}
+        confirmButtonText="Confirm Time"
       />
     </div>
   );

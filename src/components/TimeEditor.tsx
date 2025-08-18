@@ -1,0 +1,80 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
+interface TimeEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentTime: Date;
+  onConfirm: (adjustedTime: Date) => void;
+  title: string;
+  confirmButtonText?: string;
+}
+
+export const TimeEditor: React.FC<TimeEditorProps> = ({
+  open,
+  onOpenChange,
+  currentTime,
+  onConfirm,
+  title,
+  confirmButtonText = "Confirm Time"
+}) => {
+  const { toast } = useToast();
+  const [adjustedTime, setAdjustedTime] = useState(() => 
+    currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+  );
+
+  const handleConfirm = () => {
+    const [hours, minutes] = adjustedTime.split(':').map(Number);
+    const newTime = new Date(currentTime);
+    newTime.setHours(hours, minutes, 0, 0);
+    
+    onConfirm(newTime);
+    onOpenChange(false);
+    
+    toast({
+      title: "Time confirmed",
+      description: `Activity time set to ${adjustedTime}`,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              Activity Time
+            </label>
+            <Input
+              type="time"
+              value={adjustedTime}
+              onChange={(e) => setAdjustedTime(e.target.value)}
+              className="text-center text-lg"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="flex-1"
+              onClick={handleConfirm}
+            >
+              {confirmButtonText}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
