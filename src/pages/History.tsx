@@ -150,10 +150,9 @@ const History = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="recent" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="recent">Recent</TabsTrigger>
           <TabsTrigger value="all">All Days</TabsTrigger>
-          <TabsTrigger value="totals">Totals</TabsTrigger>
         </TabsList>
 
         <TabsContent value="recent" className="space-y-6">
@@ -205,191 +204,55 @@ const History = () => {
         </TabsContent>
 
         <TabsContent value="all" className="space-y-6">
-          {/* Nested tabs for Daily vs Weekly view */}
-          <Tabs defaultValue="daily" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="daily">Daily</TabsTrigger>
-              <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="daily" className="space-y-6">
-              {/* Show all days */}
-              {history.map((day) => (
-                <div key={day.date} className="space-y-3">
-                  <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
-                    <h2 className="text-xl font-semibold text-foreground">
-                      {formatDate(day.date)}
-                    </h2>
-                    <Separator className="mt-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {day.entries.map((entry) => (
-                      <Card key={entry.id} className="p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="text-2xl">{entry.icon}</div>
-                          <div className="flex-1">
-                            <p className="font-medium text-foreground">
-                              {getEntryDescription(entry)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {entry.time}
-                            </p>
-                          </div>
-                          <div className="flex gap-1">
-                            <EditEntryDialog entry={entry} />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          {/* Show all days */}
+          {history.map((day) => (
+            <div key={day.date} className="space-y-3">
+              <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
+                <h2 className="text-xl font-semibold text-foreground">
+                  {formatDate(day.date)}
+                </h2>
+                <Separator className="mt-2" />
+              </div>
               
-              {history.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📝</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No activities yet
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Start logging activities to see them here
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="weekly" className="space-y-6">
-              {/* Show activities grouped by week */}
-              {weeklyGroups.map((week) => (
-                <div key={week.weekStart} className="space-y-3">
-                  <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Week of {formatWeekRange(week.weekStart)}
-                    </h2>
-                    <Separator className="mt-2" />
-                  </div>
-                  
-                  {week.days.map((day) => (
-                    <div key={day.date} className="ml-4 space-y-2">
-                      <h3 className="text-lg font-medium text-foreground">
-                        {formatDate(day.date)}
-                      </h3>
-                      {day.entries.map((entry) => (
-                        <Card key={entry.id} className="p-4 ml-4">
-                          <div className="flex items-center gap-4">
-                            <div className="text-2xl">{entry.icon}</div>
-                            <div className="flex-1">
-                              <p className="font-medium text-foreground">
-                                {getEntryDescription(entry)}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {entry.time}
-                              </p>
-                            </div>
-                            <div className="flex gap-1">
-                              <EditEntryDialog entry={entry} />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => deleteEntry(entry.id)}
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+              <div className="space-y-2">
+                {day.entries.map((entry) => (
+                  <Card key={entry.id} className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="text-2xl">{entry.icon}</div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">
+                          {getEntryDescription(entry)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {entry.time}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <EditEntryDialog entry={entry} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteEntry(entry.id)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ))}
-              
-              {weeklyGroups.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📅</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No weekly data yet
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Start logging activities to see weekly summaries
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="totals" className="space-y-6">
-          <div className="text-center mb-6">
-            <BarChart3 className="h-8 w-8 text-primary mx-auto mb-2" />
-            <h2 className="text-2xl font-semibold text-foreground">Daily Statistics</h2>
-            <p className="text-muted-foreground">Activity counts for each day (00:00 - 23:59)</p>
-          </div>
-
-          <div className="space-y-4">
-            {history.map((day) => {
-              const dayTotals = calculateDayTotals(day.entries);
-              return (
-                <div key={day.date} className="space-y-3">
-                  <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {formatDate(day.date)}
-                    </h3>
-                    <Separator className="mt-2" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="p-4 text-center">
-                      <div className="text-2xl mb-1">💧</div>
-                      <h4 className="text-sm font-medium text-foreground">Pee</h4>
-                      <p className="text-lg font-bold text-primary">{dayTotals.peeCount}</p>
-                    </Card>
-
-                    <Card className="p-4 text-center">
-                      <div className="text-2xl mb-1">💩</div>
-                      <h4 className="text-sm font-medium text-foreground">Poo</h4>
-                      <p className="text-lg font-bold text-primary">{dayTotals.pooCount}</p>
-                    </Card>
-
-                    <Card className="p-4 text-center">
-                      <div className="text-2xl mb-1">🍼</div>
-                      <h4 className="text-sm font-medium text-foreground">Feeds</h4>
-                      <p className="text-lg font-bold text-primary">{dayTotals.feedCount}</p>
-                      {dayTotals.totalFeedAmount > 0 && (
-                        <p className="text-xs text-muted-foreground">{dayTotals.totalFeedAmount}ml</p>
-                      )}
-                    </Card>
-
-                    <Card className="p-4 text-center">
-                      <div className="text-2xl mb-1">😴</div>
-                      <h4 className="text-sm font-medium text-foreground">Sleep</h4>
-                      <p className="text-lg font-bold text-primary">{dayTotals.sleepCount}</p>
-                      <p className="text-xs text-muted-foreground">{dayTotals.totalSleepFormatted}</p>
-                    </Card>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+          
           {history.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📊</div>
+              <div className="text-6xl mb-4">📝</div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                No data to display
+                No activities yet
               </h3>
               <p className="text-muted-foreground">
-                Start logging activities to see daily statistics
+                Start logging activities to see them here
               </p>
             </div>
           )}
