@@ -346,8 +346,7 @@ const Dashboard = () => {
                 Cancel
               </Button>
               <Button 
-                variant="default" 
-                className="flex-1" 
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
                 onClick={handleFeedSubmit}
                 disabled={!feedAmount || parseInt(feedAmount) <= 0 || parseInt(feedAmount) > 1000}
               >
