@@ -58,6 +58,8 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
               value={adjustedTime}
               onChange={(e) => setAdjustedTime(e.target.value)}
               className="text-center text-lg"
+              step="60"
+              pattern="[0-9]{2}:[0-9]{2}"
             />
           </div>
           <div className="flex gap-2">

@@ -56,6 +56,8 @@ export const SleepEndTimeEditor: React.FC<SleepEndTimeEditorProps> = ({
               value={adjustedTime}
               onChange={(e) => setAdjustedTime(e.target.value)}
               className="col-span-3"
+              step="60"
+              pattern="[0-9]{2}:[0-9]{2}"
             />
           </div>
           <p className="text-sm text-muted-foreground">
