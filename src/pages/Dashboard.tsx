@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [pendingDiaperTime, setPendingDiaperTime] = useState<Date | null>(null);
   const [pendingFeedType, setPendingFeedType] = useState<"formula" | "breast">("formula");
   const [pendingDiaperType, setPendingDiaperType] = useState<"pee" | "poo">("pee");
+  const [pendingFeedAmount, setPendingFeedAmount] = useState<number>(0);
 
   // Timer effect for sleep tracking
   useEffect(() => {
@@ -76,28 +77,25 @@ const Dashboard = () => {
       const now = new Date();
       setPendingFeedTime(now);
       setPendingFeedType(currentFeedType);
-      // Don't clear feedAmount yet, keep it for confirmFeed
+      setPendingFeedAmount(amount);
+      setFeedAmount("");
       setIsDialogOpen(false);
       setShowFeedTimeEditor(true);
     }
   };
 
   const confirmFeed = (adjustedTime: Date) => {
-    const amount = parseInt(feedAmount || "0");
     addActivity({
       type: "feed",
       subtype: pendingFeedType,
-      amount: amount,
+      amount: pendingFeedAmount,
       icon: pendingFeedType === "formula" ? "🍼" : "🤱",
       time: adjustedTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
     });
 
-    // Clear feedAmount after successful confirmation
-    setFeedAmount("");
-
     toast({
       title: "Feed logged",
-      description: `${pendingFeedType === "formula" ? "Formula" : "Breast milk"} - ${amount}ml recorded`,
+      description: `${pendingFeedType === "formula" ? "Formula" : "Breast milk"} - ${pendingFeedAmount}ml recorded`,
     });
   };
 
