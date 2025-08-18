@@ -50,14 +50,13 @@ export const SleepStartTimeEditor: React.FC<SleepStartTimeEditorProps> = ({
             <Label htmlFor="startTime" className="text-right">
               Start Time
             </Label>
-            <Input
+            <input
               id="startTime"
               type="time"
               value={adjustedTime}
               onChange={(e) => setAdjustedTime(e.target.value)}
-              className="col-span-3"
-              step="60"
-              pattern="[0-9]{2}:[0-9]{2}"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 col-span-3"
+              data-format="24"
             />
           </div>
           <p className="text-sm text-muted-foreground">
