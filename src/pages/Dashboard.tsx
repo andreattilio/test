@@ -80,7 +80,11 @@ const Dashboard = () => {
       setPendingFeedAmount(amount);
       setFeedAmount("");
       setIsDialogOpen(false);
-      setShowFeedTimeEditor(true);
+      
+      // Add a small delay to ensure the previous dialog closes first
+      setTimeout(() => {
+        setShowFeedTimeEditor(true);
+      }, 100);
     }
   };
 
