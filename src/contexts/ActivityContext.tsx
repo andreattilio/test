@@ -67,17 +67,27 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
   const addActivity = (activity: Omit<ActivityEntry, 'id' | 'timestamp'>) => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-    const timeString = now.toLocaleTimeString('en-US', { 
+    
+    // Use provided time or generate current time
+    const timeString = activity.time || now.toLocaleTimeString('en-US', { 
       hour12: false, 
       hour: '2-digit', 
       minute: '2-digit' 
     });
 
+    // Create timestamp from the time string if provided, otherwise use now
+    let timestamp = now;
+    if (activity.time) {
+      const [hours, minutes] = activity.time.split(':').map(Number);
+      timestamp = new Date();
+      timestamp.setHours(hours, minutes, 0, 0);
+    }
+
     const newEntry: ActivityEntry = {
       ...activity,
       id: Date.now().toString(),
       time: timeString,
-      timestamp: now
+      timestamp: timestamp
     };
 
     // For sleep start, just store the start time and create placeholder
