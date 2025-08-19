@@ -182,7 +182,8 @@ const Dashboard = () => {
     
     const duration = Math.floor((adjustedTime.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     
-    completeSleepSession(adjustedTime); // ← pass edited end time
+    completeSleepSession();
+    setSleepStartTime(null);
     setElapsedTime(0);
 
     toast({

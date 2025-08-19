@@ -1,8 +1,35 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Settings as SettingsIcon, Download, Smartphone, Database } from "lucide-react";
 
 const Settings = () => {
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) =>
+      setEmail(data.user?.email ?? null)
+    );
+  }, []);
+
+  async function signIn() {
+    const e = prompt("Email:")?.trim();
+    const p = prompt("Password:") ?? "";
+    if (!e || !p) return;
+    const { data, error } = await supabase.auth.signInWithPassword({ email: e, password: p });
+    if (error) return alert(error.message);
+    setEmail(data.user?.email ?? null);
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setEmail(null);
+  }
+      
+
+
   const handleExportCSV = () => {
     // This will be implemented with real data later
     console.log("Exporting CSV...");
@@ -18,6 +45,18 @@ const Settings = () => {
         </h1>
         <p className="text-muted-foreground mt-2">App settings and data export</p>
       </div>
+
+            {/* Account */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>Account: {email ?? "(not signed in)"}</div>
+          <div className="space-x-2">
+            <Button onClick={signIn}>Sign in</Button>
+            <Button variant="secondary" onClick={signOut}>Sign out</Button>
+          </div>
+        </div>
+      </Card>
+
 
       {/* Export Section */}
       <div className="space-y-4">

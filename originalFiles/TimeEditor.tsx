@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 interface TimeEditorProps {
@@ -18,28 +19,32 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
   currentTime,
   onConfirm,
   title,
-  confirmButtonText = "Confirm Time",
+  confirmButtonText = "Confirm Time"
 }) => {
   const { toast } = useToast();
   const [adjustedTime, setAdjustedTime] = useState(() => {
-    const h = String(currentTime.getHours()).padStart(2, "0");
-    const m = String(currentTime.getMinutes()).padStart(2, "0");
-    return `${h}:${m}`;
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   });
 
   const handleConfirm = () => {
-    const [h, m] = adjustedTime.split(":").map(Number);
-    const dt = new Date(currentTime);
-    dt.setHours(h, m, 0, 0);
-    onConfirm(dt);
+    const [hours, minutes] = adjustedTime.split(':').map(Number);
+    const newTime = new Date(currentTime);
+    newTime.setHours(hours, minutes, 0, 0);
+    
+    onConfirm(newTime);
     onOpenChange(false);
-    toast({ title: "Time confirmed", description: `Activity time set to ${adjustedTime}` });
+    
+    toast({
+      title: "Time confirmed",
+      description: `Activity time set to ${adjustedTime}`,
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Prevent auto-focus so the time wheel doesn't appear until the user taps the field */}
-      <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -52,18 +57,22 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
               type="time"
               value={adjustedTime}
               onChange={(e) => setAdjustedTime(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background
-                         file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                         disabled:cursor-not-allowed disabled:opacity-50 text-center text-lg"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-center text-lg"
               data-format="24"
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button className="flex-1" onClick={handleConfirm}>
+            <Button 
+              className="flex-1"
+              onClick={handleConfirm}
+            >
               {confirmButtonText}
             </Button>
           </div>

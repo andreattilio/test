@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Trash2, BarChart3 } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useActivity } from "@/contexts/ActivityContext";
 import { EditEntryDialog } from "@/components/EditEntryDialog";
@@ -12,26 +12,22 @@ const History = () => {
   const { history, deleteActivity } = useActivity();
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const d = new Date(dateStr);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'short', 
-        day: 'numeric',
-        year: 'numeric'
-      });
-    }
+    if (d.toDateString() === today.toDateString()) return "Today";
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return d.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  const getEntryDescription = (entry: any) => {
+  // Title line text
+  const getEntryTitle = (entry: any) => {
     switch (entry.type) {
       case "feed":
         return `${entry.subtype === "formula" ? "Formula" : "Breast milk"} - ${entry.amount}ml`;
@@ -39,7 +35,8 @@ const History = () => {
         return entry.subtype === "pee" ? "Pee" : "Poo";
       case "sleep":
         if (entry.subtype === "session") {
-          return `Sleep: ${entry.sleepStart} - ${entry.sleepEnd} (${entry.sleepDuration})`;
+          // Title shows only range
+          return `Sleep: ${entry.sleepStart} - ${entry.sleepEnd}`;
         }
         return entry.subtype === "start" ? "Sleep started" : "Sleep ended";
       default:
@@ -49,7 +46,6 @@ const History = () => {
 
   const deleteEntry = (entryId: string) => {
     deleteActivity(entryId);
-    
     toast({
       title: "Entry deleted",
       description: "Activity has been removed from history",
@@ -57,89 +53,69 @@ const History = () => {
     });
   };
 
-  const calculateDayTotals = (entries: any[]) => {
-    let peeCount = 0;
-    let pooCount = 0;
-    let feedCount = 0;
-    let totalFeedAmount = 0;
-    let sleepCount = 0;
-    let totalSleepMinutes = 0;
-
-    entries.forEach(entry => {
-      switch (entry.type) {
-        case "diaper":
-          if (entry.subtype === "pee") peeCount++;
-          if (entry.subtype === "poo") pooCount++;
-          break;
-        case "feed":
-          feedCount++;
-          if (entry.amount) totalFeedAmount += entry.amount;
-          break;
-        case "sleep":
-          if (entry.subtype === "session" && entry.sleepDuration) {
-            sleepCount++;
-            // Parse duration like "2h 30m" to minutes
-            const durationMatch = entry.sleepDuration.match(/(\d+)h\s*(\d+)m/);
-            if (durationMatch) {
-              const hours = parseInt(durationMatch[1]);
-              const minutes = parseInt(durationMatch[2]);
-              totalSleepMinutes += (hours * 60) + minutes;
-            }
-          }
-          break;
-      }
-    });
-
-    const totalSleepHours = Math.floor(totalSleepMinutes / 60);
-    const remainingSleepMinutes = totalSleepMinutes % 60;
-
-    return {
-      peeCount,
-      pooCount,
-      feedCount,
-      totalFeedAmount,
-      sleepCount,
-      totalSleepFormatted: `${totalSleepHours}h ${remainingSleepMinutes}m`
-    };
-  };
-
-  const groupByWeek = (history: any[]) => {
-    const weeks: { [key: string]: any[] } = {};
-    
-    history.forEach(day => {
+  const groupByWeek = (days: any[]) => {
+    const weeks: Record<string, any[]> = {};
+    for (const day of days) {
       const date = new Date(day.date);
-      // Get Monday of the week
       const monday = new Date(date);
-      const dayOfWeek = date.getDay();
-      const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const dow = date.getDay();
+      const diff = date.getDate() - dow + (dow === 0 ? -6 : 1);
       monday.setDate(diff);
-      
-      const weekKey = monday.toISOString().split('T')[0];
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = [];
-      }
-      weeks[weekKey].push(day);
-    });
-
-    return Object.entries(weeks).map(([weekStart, days]) => ({
-      weekStart,
-      days: days.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    })).sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime());
-  };
-
-  const formatWeekRange = (weekStart: string) => {
-    const start = new Date(weekStart);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    
-    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      const key = monday.toISOString().split("T")[0];
+      (weeks[key] ||= []).push(day);
+    }
+    return Object.entries(weeks)
+      .map(([weekStart, ds]) => ({
+        weekStart,
+        days: ds.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      }))
+      .sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime());
   };
 
   const weeklyGroups = groupByWeek(history);
 
+  const renderDay = (day: any) => (
+    <div key={day.date} className="space-y-3">
+      <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
+        <h2 className="text-xl font-semibold text-foreground">{formatDate(day.date)}</h2>
+        <Separator className="mt-2" />
+      </div>
+
+      <div className="space-y-2">
+        {day.entries.map((entry: any) => {
+          const isSleepSession = entry.type === "sleep" && entry.subtype === "session";
+          return (
+            <Card key={entry.id} className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="text-2xl">{entry.icon}</div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{getEntryTitle(entry)}</p>
+                  {/* subtext: show duration for sleep sessions; otherwise show the entry time */}
+                  <p className="text-sm text-muted-foreground">
+                    {isSleepSession ? entry.sleepDuration : entry.time}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <EditEntryDialog entry={entry} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteEntry(entry.id)}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
-      {/* Header */}
       <div className="text-center pt-4">
         <h1 className="text-3xl font-bold text-foreground flex items-center justify-center gap-2">
           <Clock className="h-8 w-8 text-primary" />
@@ -148,7 +124,6 @@ const History = () => {
         <p className="text-muted-foreground mt-2">All recorded activities and statistics</p>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="recent" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="recent">Recent</TabsTrigger>
@@ -156,104 +131,23 @@ const History = () => {
         </TabsList>
 
         <TabsContent value="recent" className="space-y-6">
-          {/* Show only today's entries */}
-          {history.slice(0, 1).map((day) => (
-            <div key={day.date} className="space-y-3">
-              <div className="space-y-2">
-                {day.entries.map((entry) => (
-                  <Card key={entry.id} className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="text-2xl">{entry.icon}</div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">
-                          {getEntryDescription(entry)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {entry.time}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <EditEntryDialog entry={entry} />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteEntry(entry.id)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-          
+          {history.slice(0, 1).map(renderDay)}
           {(history.length === 0 || history[0]?.entries.length === 0) && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No activities today
-              </h3>
-              <p className="text-muted-foreground">
-                Start logging activities to see them here
-              </p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No activities today</h3>
+              <p className="text-muted-foreground">Start logging activities to see them here</p>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="all" className="space-y-6">
-          {/* Show all days */}
-          {history.map((day) => (
-            <div key={day.date} className="space-y-3">
-              <div className="sticky top-0 bg-background/80 backdrop-blur-sm py-2">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {formatDate(day.date)}
-                </h2>
-                <Separator className="mt-2" />
-              </div>
-              
-              <div className="space-y-2">
-                {day.entries.map((entry) => (
-                  <Card key={entry.id} className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="text-2xl">{entry.icon}</div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">
-                          {getEntryDescription(entry)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {entry.time}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <EditEntryDialog entry={entry} />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteEntry(entry.id)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-          
+          {history.map(renderDay)}
           {history.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No activities yet
-              </h3>
-              <p className="text-muted-foreground">
-                Start logging activities to see them here
-              </p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No activities yet</h3>
+              <p className="text-muted-foreground">Start logging activities to see them here</p>
             </div>
           )}
         </TabsContent>

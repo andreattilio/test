@@ -33,7 +33,7 @@ interface ActivityContextType {
   editActivity: (updatedEntry: ActivityEntry) => void;
   sleepStartTime: Date | null;
   setSleepStartTime: (time: Date | null) => void;
-  completeSleepSession: (endAt?: Date) => void; // ← accept edited end time
+  completeSleepSession: () => void;
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
@@ -189,7 +189,7 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (activity.type === "sleep" && activity.subtype === "start") {
       saveFromActivity({ ...newEntry, subtype: "start" })
         .then((cloudId: any) => {
-          // saveFromActivity returns the inserted id
+          // saveFromActivity must return the inserted id (ensure your helper returns it)
           const id = typeof cloudId === "string" ? cloudId : cloudId?.id || cloudId;
           setSleepStartTime(timestamp);
           setPendingSleepId(id);
@@ -222,12 +222,12 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
       .catch((e) => console.error("Cloud save failed:", e?.message ?? e));
   };
 
-  const completeSleepSession = (endAt?: Date) => {
+  const completeSleepSession = () => {
     if (!sleepStartTime || !pendingSleepId) return;
 
-    const end = endAt ?? new Date(); // ← use edited end time when provided
-    const today = end.toISOString().split("T")[0];
-    const duration = Math.floor((end.getTime() - sleepStartTime.getTime()) / (1000 * 60));
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const duration = Math.floor((now.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
 
@@ -240,7 +240,7 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
       time: sleepStartTime.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
       timestamp: sleepStartTime,
       sleepStart: sleepStartTime.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
-      sleepEnd: end.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
+      sleepEnd: now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
       sleepDuration: `${hours}h ${minutes}m`,
     };
 
