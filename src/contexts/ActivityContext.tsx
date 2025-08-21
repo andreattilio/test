@@ -8,6 +8,11 @@ import { saveFromActivity } from "@/api/saveFromActivity";
 import { deleteEntryById } from "@/api/deleteEntry";
 import { updateEntryById } from "@/api/updateEntry";
 
+//addition 1
+const dayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+
 export interface ActivityEntry {
   id: string;
   time: string;
@@ -45,8 +50,8 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [history, setHistory] = useState<DayHistory[]>(() => {
     const today = new Date();
     return [
-      {
-        date: today.toISOString().split("T")[0],
+      {//addition 2
+        date: dayKey(today),
         entries: [
           {
             id: "1",
@@ -119,7 +124,7 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
       const byDate: Record<string, ActivityEntry[]> = {};
       for (const r of rows) {
         const local = rowToLocal(r);
-        const key = local.timestamp.toISOString().slice(0, 10); // YYYY-MM-DD
+        const key = dayKey(local.timestamp); // YYYY-MM-DD
         (byDate[key] ||= []).push(local);
       }
       const days: DayHistory[] = Object.entries(byDate)
@@ -165,7 +170,7 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addActivity = (activity: Omit<ActivityEntry, "id" | "timestamp">) => {
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
+    const today = dayKey(now);
 
     const timeString =
       activity.time ||
@@ -226,7 +231,7 @@ export const ActivityProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!sleepStartTime || !pendingSleepId) return;
 
     const end = endAt ?? new Date(); // ← use edited end time when provided
-    const today = end.toISOString().split("T")[0];
+    const today = dayKey(end);
     const duration = Math.floor((end.getTime() - sleepStartTime.getTime()) / (1000 * 60));
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
