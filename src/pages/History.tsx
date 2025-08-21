@@ -7,17 +7,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useActivity } from "@/contexts/ActivityContext";
 import { EditEntryDialog } from "@/components/EditEntryDialog";
 
+// --- helpers: local date key <-> Date ---
+const parseLocalKey = (key: string) => {
+  // key is "YYYY-MM-DD" and should be treated as LOCAL midnight
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+
 const History = () => {
   const { toast } = useToast();
   const { history, deleteActivity } = useActivity();
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
+  const formatDate = (dateKey: string) => {
+    const d = parseLocalKey(dateKey);
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yday = new Date();
+    yday.setDate(today.getDate() - 1);
+
     if (d.toDateString() === today.toDateString()) return "Today";
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    if (d.toDateString() === yday.toDateString()) return "Yesterday";
+
     return d.toLocaleDateString("en-US", {
       weekday: "long",
       month: "short",
@@ -25,14 +34,15 @@ const History = () => {
       year: "numeric",
     });
   };
-const formatTimeToAMPM = (timeStr: string) => {
-    if (!timeStr) return '';
-    const [hours, minutes] = timeStr.split(':');
-    const hour12 = ((parseInt(hours) + 11) % 12) + 1;
-    const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
-    return `${hour12}:${minutes} ${ampm}`;
+
+  const formatTimeToAMPM = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":").map(Number);
+    const h12 = ((h + 11) % 12) + 1;
+    const ampm = h >= 12 ? "PM" : "AM";
+    return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
   };
-  // Title line text
+
   const getEntryTitle = (entry: any) => {
     switch (entry.type) {
       case "feed":
@@ -41,7 +51,6 @@ const formatTimeToAMPM = (timeStr: string) => {
         return entry.subtype === "pee" ? "Pee" : "Poo";
       case "sleep":
         if (entry.subtype === "session") {
-          // Title shows only range
           return `Sleep: ${formatTimeToAMPM(entry.sleepStart)} - ${formatTimeToAMPM(entry.sleepEnd)}`;
         }
         return entry.subtype === "start" ? "Sleep started" : "Sleep ended";
@@ -62,20 +71,25 @@ const formatTimeToAMPM = (timeStr: string) => {
   const groupByWeek = (days: any[]) => {
     const weeks: Record<string, any[]> = {};
     for (const day of days) {
-      const date = new Date(day.date);
+      const date = parseLocalKey(day.date);
+      // Monday of that local week
       const monday = new Date(date);
       const dow = date.getDay();
       const diff = date.getDate() - dow + (dow === 0 ? -6 : 1);
       monday.setDate(diff);
-      const key = monday.toISOString().split("T")[0];
+      const key = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(
+        monday.getDate()
+      ).padStart(2, "0")}`;
       (weeks[key] ||= []).push(day);
     }
     return Object.entries(weeks)
       .map(([weekStart, ds]) => ({
         weekStart,
-        days: ds.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        days: ds.sort(
+          (a, b) => parseLocalKey(b.date).getTime() - parseLocalKey(a.date).getTime()
+        ),
       }))
-      .sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime());
+      .sort((a, b) => parseLocalKey(b.weekStart).getTime() - parseLocalKey(a.weekStart).getTime());
   };
 
   const weeklyGroups = groupByWeek(history);
@@ -96,7 +110,6 @@ const formatTimeToAMPM = (timeStr: string) => {
                 <div className="text-2xl">{entry.icon}</div>
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{getEntryTitle(entry)}</p>
-                  {/* subtext: show duration for sleep sessions; otherwise show the entry time */}
                   <p className="text-sm text-muted-foreground">
                     {isSleepSession ? entry.sleepDuration : formatTimeToAMPM(entry.time)}
                   </p>
