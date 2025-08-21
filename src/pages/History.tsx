@@ -25,7 +25,13 @@ const History = () => {
       year: "numeric",
     });
   };
-
+const formatTimeToAMPM = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const hour12 = ((parseInt(hours) + 11) % 12) + 1;
+    const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${minutes} ${ampm}`;
+  };
   // Title line text
   const getEntryTitle = (entry: any) => {
     switch (entry.type) {
@@ -36,7 +42,7 @@ const History = () => {
       case "sleep":
         if (entry.subtype === "session") {
           // Title shows only range
-          return `Sleep: ${entry.sleepStart} - ${entry.sleepEnd}`;
+          return `Sleep: ${formatTimeToAMPM(entry.sleepStart)} - ${formatTimeToAMPM(entry.sleepEnd)}`;
         }
         return entry.subtype === "start" ? "Sleep started" : "Sleep ended";
       default:
@@ -92,7 +98,7 @@ const History = () => {
                   <p className="font-medium text-foreground">{getEntryTitle(entry)}</p>
                   {/* subtext: show duration for sleep sessions; otherwise show the entry time */}
                   <p className="text-sm text-muted-foreground">
-                    {isSleepSession ? entry.sleepDuration : entry.time}
+                    {isSleepSession ? entry.sleepDuration : formatTimeToAMPM(entry.time)}
                   </p>
                 </div>
                 <div className="flex gap-1">
